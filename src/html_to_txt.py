@@ -9,8 +9,7 @@ def html2text(r_path):
     [この関数内でファイルの読み書きを行うのはあまり良くない気がする。]
     """
     # テキストの読み込み
-    # windows環境では cp932によるエンコードがデフォルトなので、utf-8によるエンコードを行う。
-    with open(r_path, encoding="utf-8") as f:
+    with open(r_path) as f:
         html = f.read()
 
     # テキストの取得
@@ -20,11 +19,11 @@ def html2text(r_path):
     # テキストの書き込み
     basename = os.path.basename(r_path)  # 読み込みファイル名を取得
     name = os.path.splitext(basename)[0]  # 拡張子を削除
-    w_path = 'data\\text\\' + name + '.txt'
-    with open(w_path, mode='w', encoding="utf-8") as f:
+    w_path = './data/text/' + name + '.txt'
+    with open(w_path, mode='w') as f:
         f.write(text)
 
 
 if __name__ == '__main__':
-    r_path = 'data\\yuho\\takeda.htm'  # 読み込みファイル名
+    r_path = './data/yuho/takeda.htm'  # 読み込みファイル名
     html2text(r_path)
