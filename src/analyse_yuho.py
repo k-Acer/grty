@@ -13,7 +13,7 @@ def analyse_text(r_path, stop_words):
 
     Args:
         r_path (str): 読み込みファイル名
-        stop_word (list): ストップワードのリスト
+        stop_words (list): ストップワードのリスト
 
     Returns:
         list: 形態素解析を行った単語をリスト型で返す
@@ -85,18 +85,21 @@ def get_topick(texts):
     # トピックの表示
     pprint(lda.show_topics())
         
-def roop_analyse_text(stop_word):
+def roop_analyse_text(path, stop_words):
     """
     analyse_text を繰り返し実行する。
+
+    Args:
+        path (str): 読み込みディレクトリのパス
+        stop_words (list): ストップワードのリスト
 
     Returns:
         list: 形態素解析積みの各テキストをリストに格納して返す
     """
-    path = './data/text/'
     # テキストのファイル名を取得
     files = os.listdir(path)
     # 各テキストに対して形態素解析
-    texts = [analyse_text(path + f, stop_word) for f in files]
+    texts = [analyse_text(path + f, stop_words) for f in files]
     return texts
     
 
@@ -104,7 +107,7 @@ def roop_analyse_text(stop_word):
 if __name__ == '__main__':
 
     # ストップワードリストの作成
-    stop_word = create_stopwords('./data/slothlib/slothlib.txt')
+    stop_words = create_stopwords('./data/slothlib/slothlib.txt')
 
     # 形態素解析
     # gurunabi = analyse_text('./data/text/gurunabi.txt', stop_word)
@@ -120,8 +123,8 @@ if __name__ == '__main__':
 
     # # 確認用
     # print(roson)
-
-    texts = roop_analyse_text(stop_word)
+    dir_path = './data/text_sample/'
+    texts = roop_analyse_text(dir_path, stop_words)
     get_topick(texts)
 
     #### １年分のデータでやる
