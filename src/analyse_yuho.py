@@ -5,33 +5,38 @@ from pprint import pprint
 import gensim
 from gensim import corpora
 import neologdn
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 import MeCab
+from tqdm import tqdm  # 進捗状況の表示
+from wordcloud import WordCloud
 
-def analyse_text(r_path, stop_words):
+import utils
+
+def analyse_text(r_file, stop_words):
     """
     形態素解析を行う。
 
     Args:
-        r_path (str): 読み込みファイル名
+        r_file (str): 読み込みファイルのパス
         stop_words (list): ストップワードのリスト
 
     Returns:
         list: 形態素解析を行った単語をリスト型で返す
     """
     # テキストの読み込み
-    with open(r_path) as f:
+    with open(r_file) as f:
         text = f.read()
     # テキストの正規化
     text = neologdn.normalize(text)
     # 形態素解析
-    m = MeCab.Tagger ("-d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd")
-    # # 確認用
-    # print(m.parse(text))
+    m = MeCab.Tagger("-d /usr/lib/x86_64-linux-gnu/mecab/dic/mecab-ipadic-neologd")
     # 名詞の格納
     word_list = []
     node = m.parseToNode(text)
     while node:
-        word = node.surface
+        word = node.feature.split(",")[6]
         hinshi = node.feature.split(",")[0]
         if hinshi == '名詞':
             word_list.append(word)
@@ -65,43 +70,124 @@ def download_slothlib(path):
     url = 'http://svn.sourceforge.jp/svnroot/slothlib/CSharp/Version1/SlothLib/NLP/Filter/StopWord/word/Japanese.txt'
     urllib.request.urlretrieve(url, path)
 
-def get_topick(texts):
+def make_lda(texts):
     """
     トピックを抽出する。
+    Args:
+        texts (list): 形態素解析を行った単語のリスト
 
     Returns:
-        list: 形態素解析積みの各テキストをリストに格納して返す
+        ldaモデル
     """
     # 辞書の作成
     dictionary = corpora.Dictionary(texts)
     dictionary.filter_extremes(no_below=2, no_above=0.8)
     # 辞書をテキストファイルに保存
     # dictionary.save_as_text('./tmp/deerwester.dict.txt')
+    # コーパスの作成
     corpus = [dictionary.doc2bow(text) for text in texts]
     # コーパスをファイルに保存
     # corpora.MmCorpus.serialize('./tmp/deerwester.mm', corpus)
-    # num_topics=5で、5個のトピックを持つLDAモデルを作成
-    lda = gensim.models.ldamodel.LdaModel(corpus=corpus, num_topics=10, id2word=dictionary)
-    # トピックの表示
-    pprint(lda.show_topics())
+    # LDAモデルの作成
+    lda = gensim.models.ldamodel.LdaModel(corpus=corpus, num_topics=25, id2word=dictionary)
+    # ldaモデルの保存
+    # lda.save('./tmp/lda.model')
+    return lda
+
+def show_topics(lda):
+    """
+    リスクトピックを表示する。
+
+    Args:
+        ldaモデル
+    """
+    fig, axs = plt.subplots(ncols=5, nrows=int(lda.num_topics/5), figsize=(16,20))
+    axs = axs.flatten()
+
+    for i, t in enumerate(range(lda.num_topics)):
+        x = dict(lda.show_topic(t, 30))
+        im = WordCloud(font_path='./data/fonto/NotoSansCJK-Regular.ttc', background_color='white', width=300, height=300, random_state=0).generate_from_frequencies(x)
+        axs[i].imshow(im)
+        axs[i].axis('off')
+        axs[i].set_title('Topic '+str(t))
+
+    # vis
+    # plt.tight_layout()
+    # plt.show()
+
+    # # ワードクラウドの保存
+    plt.savefig('./tmp/wordcloud.png') 
         
-def roop_analyse_text(path, stop_words):
+def roop_analyse_text(r_dir, stop_words):
     """
     analyse_text を繰り返し実行する。
 
     Args:
-        path (str): 読み込みディレクトリのパス
+        r_dir (str): 読み込みディレクトリのパス
         stop_words (list): ストップワードのリスト
 
     Returns:
         list: 形態素解析積みの各テキストをリストに格納して返す
     """
     # テキストのファイル名を取得
-    files = os.listdir(path)
+    filepaths = utils.get_filepaths(r_dir)
     # 各テキストに対して形態素解析
-    texts = [analyse_text(path + f, stop_words) for f in files]
+    texts = [analyse_text(r_file, stop_words) for r_file in filepaths]
     return texts
     
+def model_evaluation(w_path, texts):
+    """
+    トピック数ごとのモデルの評価を行う。  ## よく分かっていないので、修正が必要。
+
+    Args:
+        texts (list): 形態素解析を行った単語のリスト
+
+    Returns:
+        list: 形態素解析積みの各テキストをリストに格納して返す
+    """
+    #Metrics for Topic Models
+    start = 2
+    limit = 22
+    step = 1
+    coherence_vals = []
+    perplexity_vals = []
+
+    # 辞書の作成
+    dictionary = corpora.Dictionary(texts)
+    dictionary.filter_extremes(no_below=2, no_above=0.8)
+    # コーパスの作成
+    corpus = [dictionary.doc2bow(text) for text in texts]
+
+    for n_topic in tqdm(range(start, limit, step)):
+        lda = gensim.models.ldamodel.LdaModel(corpus=corpus, id2word=dictionary, num_topics=n_topic, random_state=0)
+        perplexity_vals.append(np.exp2(-lda.log_perplexity(corpus)))
+        coherence_model_lda = gensim.models.CoherenceModel(model=lda, texts=texts, dictionary=dictionary, coherence='c_v')
+        coherence_vals.append(coherence_model_lda.get_coherence())
+    
+    # evaluation
+    x = range(start, limit, step)
+
+    fig, ax1 = plt.subplots(figsize=(12,5))
+
+    # coherence
+    c1 = 'darkturquoise'
+    ax1.plot(x, coherence_vals, 'o-', color=c1)
+    ax1.set_xlabel('Num Topics')
+    ax1.set_ylabel('Coherence', color=c1); ax1.tick_params('y', colors=c1)
+
+    # perplexity
+    c2 = 'slategray'
+    ax2 = ax1.twinx()
+    ax2.plot(x, perplexity_vals, 'o-', color=c2)
+    ax2.set_ylabel('Perplexity', color=c2); ax2.tick_params('y', colors=c2)
+
+    # Vis
+    ax1.set_xticks(x)
+    fig.tight_layout()
+    plt.show()
+
+    # save as png
+    plt.savefig(w_path) 
 
 
 if __name__ == '__main__':
@@ -110,24 +196,18 @@ if __name__ == '__main__':
     stop_words = create_stopwords('./data/slothlib/slothlib.txt')
 
     # 形態素解析
-    # gurunabi = analyse_text('./data/text/gurunabi.txt', stop_word)
-    # hokuto = analyse_text('./data/text/hokuto.txt', stop_word)
-    # idemitu = analyse_text('./data/text/idemitu.txt', stop_word)
-    # komatuseisaku = analyse_text('./data/text/komatuseisaku.txt', stop_word)
-    # koropura = analyse_text('./data/text/koropura.txt', stop_word)
-    # morinaga = analyse_text('./data/text/morinaga.txt', stop_word)
-    # roson = analyse_text('./data/text/roson.txt', stop_word)
-    # takeda = analyse_text('./data/text/takeda.txt', stop_word)
-    # teiseki = analyse_text('./data/text/teiseki.txt', stop_word)
-    # toyota = analyse_text('./data/text/toyota.txt', stop_word)
-
-    # # 確認用
+    # roson = analyse_text('./data/text_sample/roson.txt', stop_words)
+    # 確認用
     # print(roson)
-    dir_path = './data/text_sample/'
-    texts = roop_analyse_text(dir_path, stop_words)
-    get_topick(texts)
 
-    #### １年分のデータでやる
+    # トピックの取得
+    r_dir = './data/text/2019/'  # 2019年
+    # r_dir = './data/text_sample/'  # sample
+    texts = roop_analyse_text(r_dir, stop_words)
+    lda = make_lda(texts)
+    show_topics(lda)
 
-    
+    # # モデルの評価
+    # w_path = './tmp/evaluation.png'
+    # model_evaluation(w_path, texts)
     
