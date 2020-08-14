@@ -2,6 +2,8 @@ import os
 
 from bs4 import BeautifulSoup
 
+import utils
+
 
 def html2text(r_file, w_dir):
     """
@@ -36,27 +38,12 @@ def roop_html2text(r_dir, w_dir):
         w_dir (str): テキストファイルを保存するディレクトリのパス
     """
     # 各HTMLファイルからテキストを取得し、保存する。
-    filepaths = get_filepaths(r_dir)
+    filepaths = utils.get_filepaths(r_dir)
     for r_file in filepaths:
         html2text(r_file, w_dir)
 
-def get_filepaths(r_dir):
-    """
-    r_dir 以下のファイル名を全て取得する。
-
-    Args:
-        r_dir (str): 読み込みディレクトリのパス
-
-    Returns:
-        list: 各ファイルのパスをリストに格納して返す
-    """
-    # テキストのファイル名を取得
-    filenames = os.listdir(r_dir)
-    filepaths = [r_dir + f for f in filenames]
-    return filepaths
-
 if __name__ == '__main__':
 
-    r_dir = './data/yuho/2019/'
-    w_dir = './data/text/2019/'
+    r_dir = './data/yuho_sample/'
+    w_dir = './data/text_sample/'
     roop_html2text(r_dir, w_dir)
