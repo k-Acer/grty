@@ -70,7 +70,31 @@ def download_slothlib(path):
     url = 'http://svn.sourceforge.jp/svnroot/slothlib/CSharp/Version1/SlothLib/NLP/Filter/StopWord/word/Japanese.txt'
     urllib.request.urlretrieve(url, path)
 
-def make_lda(texts):
+def make_lda_bow(texts):
+    """
+    トピックを抽出する。
+    Args:
+        texts (list): 形態素解析を行った単語のリスト
+
+    Returns:
+        ldaモデル
+    """
+    # 辞書の作成
+    dictionary = corpora.Dictionary(texts)
+    dictionary.filter_extremes(no_below=20, no_above=0.8)
+    # 辞書をテキストファイルに保存
+    # dictionary.save_as_text('./tmp/deerwester.dict.txt')
+    # コーパスの作成
+    corpus = [dictionary.doc2bow(text) for text in texts]
+    # コーパスをファイルに保存
+    # corpora.MmCorpus.serialize('./tmp/deerwester.mm', corpus)
+    # LDAモデルの作成
+    lda = gensim.models.ldamodel.LdaModel(corpus=corpus, num_topics=25, id2word=dictionary)
+    # ldaモデルの保存
+    # lda.save('./tmp/lda_bow.model')
+    return lda
+
+def make_lda_tfidf(texts):
     """
     トピックを抽出する。
     Args:
@@ -82,16 +106,14 @@ def make_lda(texts):
     # 辞書の作成
     dictionary = corpora.Dictionary(texts)
     dictionary.filter_extremes(no_below=2, no_above=0.8)
-    # 辞書をテキストファイルに保存
-    # dictionary.save_as_text('./tmp/deerwester.dict.txt')
     # コーパスの作成
     corpus = [dictionary.doc2bow(text) for text in texts]
-    # コーパスをファイルに保存
-    # corpora.MmCorpus.serialize('./tmp/deerwester.mm', corpus)
     # LDAモデルの作成
-    lda = gensim.models.ldamodel.LdaModel(corpus=corpus, num_topics=25, id2word=dictionary)
+    tfidf = gensim.models.TfidfModel(corpus)
+    corpus_tfidf = tfidf[corpus]
+    lda = gensim.models.ldamodel.LdaModel(corpus=corpus_tfidf, num_topics=25, id2word=dictionary)
     # ldaモデルの保存
-    # lda.save('./tmp/lda.model')
+    # lda.save('./tmp/lda_tfidf.model')
     return lda
 
 def show_topics(lda):
@@ -116,7 +138,7 @@ def show_topics(lda):
     # plt.show()
 
     # # ワードクラウドの保存
-    plt.savefig('./tmp/wordcloud.png') 
+    plt.savefig('./tmp/wordcloud_2.png') 
         
 def roop_analyse_text(r_dir, stop_words):
     """
@@ -195,16 +217,20 @@ if __name__ == '__main__':
     # ストップワードリストの作成
     stop_words = create_stopwords('./data/slothlib/slothlib.txt')
 
-    # 形態素解析
-    # roson = analyse_text('./data/text_sample/roson.txt', stop_words)
-    # 確認用
-    # print(roson)
+    # # 形態素解析
+    # text = analyse_text('./data/text_sample/roson.txt', stop_words)
+    # # 確認用
+    # print(text)
 
     # トピックの取得
     r_dir = './data/text/2019/'  # 2019年
-    # r_dir = './data/text_sample/'  # sample
+    # # r_dir = './data/text_sample/'  # sample
     texts = roop_analyse_text(r_dir, stop_words)
-    lda = make_lda(texts)
+    # BoW
+    lda = make_lda_bow(texts)
+    # TFIDF
+    # lda = make_lda_tfidf(texts)
+    # print(lda.show_topics())
     show_topics(lda)
 
     # # モデルの評価
