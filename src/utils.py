@@ -11,6 +11,9 @@ def get_filepaths(r_dir):
         list: 各ファイルのパスをリストに格納して返す
     """
     # テキストのファイル名を取得
-    filenames = os.listdir(r_dir)
-    filepaths = [r_dir + f for f in filenames]
-    return filepaths
+    filelist = []
+    for f in os.listdir(r_dir):
+        if os.path.isfile(os.path.join(r_dir, f)):
+            filelist.append(r_dir + f)
+
+    return filelist
