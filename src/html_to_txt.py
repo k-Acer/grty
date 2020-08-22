@@ -1,6 +1,7 @@
 import os
 
 from bs4 import BeautifulSoup
+import chardet
 
 import utils
 
@@ -14,9 +15,14 @@ def html2text(r_file, w_dir):
         r_file (str): HTMLファイルが格納されたファイルのパス
         w_dir (str): テキストファイルを保存するディレクトリのパス
     """
-    # テキストの読み込み
-    with open(r_file) as f:
+    # テキストをバイト列として読み込み
+    with open(r_file, 'rb') as f:
         html = f.read()
+    # 文字コードの判定とデコード
+    if chardet.detect(html)['encoding'] == 'utf-8':
+        html.decode('utf-8')
+    else:
+        html.decode('cp932')
     # テキストの取得
     soup = BeautifulSoup(html,"html.parser")
     text = soup.get_text()
@@ -26,7 +32,7 @@ def html2text(r_file, w_dir):
     basename = os.path.basename(r_file)  # 読み込みファイル名を取得
     name = os.path.splitext(basename)[0]  # 拡張子を削除
     w_path = w_dir + name + '.txt'
-    with open(w_path, mode='w') as f:
+    with open(w_path, mode='w', encoding='utf-8') as f:
         f.write(text)
 
 def roop_html2text(r_dir, w_dir):
@@ -52,8 +58,8 @@ def roop_html2text(r_dir, w_dir):
 
 if __name__ == '__main__':
     
-    r_dir = './data/yuho_sample/2019/'
-    w_dir = './data/text_sample/2019/'
+    r_dir = './data/yuho/2016/'
+    w_dir = './data/text/2016/'
     roop_html2text(r_dir, w_dir)
 
     # sample
