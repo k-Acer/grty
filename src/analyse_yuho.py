@@ -88,9 +88,9 @@ def normalize_texts(word):
     word = re.sub('.*%', '', word)
     return word
 
-def roop_analyse_text(r_dir, stop_words):
+def analyse_text_1Y(r_dir, stop_words):
     """
-    analyse_text を繰り返し実行する。
+    analyse_text を繰り返し実行する(1年分)。
 
     Args:
         r_dir (str): 読み込みディレクトリのパス
@@ -102,9 +102,34 @@ def roop_analyse_text(r_dir, stop_words):
     # テキストのファイル名を取得
     filepaths = utils.get_filepaths(r_dir)
     # 各テキストに対して形態素解析
-    print('Analysing Text ...')
+    print('Start Text Analysis')
     texts = [analyse_text(r_file, stop_words) for r_file in filepaths]
-    print('Fin')
+    print('Fin Text Analysis')
+    return texts
+
+def analyse_text_all(r_dir, stop_words):
+    """
+    analyse_text を繰り返し実行する(全期間)。
+
+    Args:
+        r_dir (str): 読み込みディレクトリのパス
+        stop_words (list): ストップワードのリスト
+
+    Returns:
+        list: 形態素解析積みの各テキストをリストに格納して返す
+    """
+    # テキストファイルが格納されている各年度のディレクトリ名のリストを取得
+    dirpaths = os.listdir(r_dir)
+    # 全期間のファイルパスを取得
+    filepaths = []
+    for d in dirpaths:
+        f = utils.get_filepaths(r_dir + d)
+        for filepath in f:
+            filepaths.append(filepath)
+    # 全期間のファイルに対して形態素解析
+    print('Start Text Analysis')
+    texts = [analyse_text(r_file, stop_words) for r_file in filepaths]
+    print('Fin Text Analysis')
     return texts
 
 def make_lda_bow(texts, no_below, no_above, num_topics):
@@ -168,7 +193,7 @@ def visualize_topics(lda, lda_param):
         lda: ldaモデル
         lda_param (list): ldaモデルのパラメーター
     """
-    fig, axs = plt.subplots(ncols=5, nrows=int(lda.num_topics/5), figsize=(16,20))
+    fig, axs = plt.subplots(ncols=2, nrows=int(lda.num_topics/2), figsize=(16,20))
     axs = axs.flatten()
 
     for i, t in enumerate(range(lda.num_topics)):
@@ -249,47 +274,42 @@ if __name__ == '__main__':
     # ストップワードリストの作成
     stop_words = create_stopwords('./data/slothlib/slothlib.txt')
 
-    # # 形態素解析
-    # text = analyse_text('./data/text_sample/roson.txt', stop_words)
-    # # 確認用
-    # print(text)
-
-    # トピックの取得
-    r_dir = './data/text/2019/'  # 2019年
-    texts = roop_analyse_text(r_dir, stop_words)
+    # 全期間のトピックの取得
+    r_dir = './data/text/'
+    texts = analyse_text_all(r_dir, stop_words)
     # # BoW
-    lda, lda_param = make_lda_bow(texts, 80, 0.7, 10)
+    lda, lda_param = make_lda_bow(texts, 100, 0.4, 14)
     # # TFIDF
     # # lda = make_lda_tfidf(texts)
 
-    # # トピックの表示
-    # # for t in lda.show_topics(-1):
-    # #     print(t)
+    # トピックの表示
+    for t in lda.show_topics(-1):
+        print(t)
 
     visualize_topics(lda, lda_param)
 
     # モデルの評価
-    # no_below = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-    # no_above = [0.4, 0.5, 0.6, 0.7, 0.8]
+    # no_below = [30, 40, 50, 60, 70, 80, 90, 100]
+    # no_above = [0.4, 0.5, 0.6, 0.7]
     # for a in no_above:
     #     for b in no_below:
     #         above = int(a*10)
-    #         w_path = './tmp/evaluation_{0}_{1}.png'.format(b, above)
+    #         w_path = './tmp/evaluation/5year/evaluation_{0}_{1}.png'.format(b, above)
     #         model_evaluation(w_path, texts, 30, b, a)
 
     
+    ### Sample
 
-    # [Test] トピックの取得
-    # r_dir = './data/text_sample/'
-    # texts = roop_analyse_text(r_dir, stop_words)
-    # lda = make_lda_bow(texts, './tmp/sample_re_2019_1_9_10.txt')
+    # ## １年分のトピックの取得
+    # r_dir = './data/text/2020/'  # 2020年
+    # texts = analyse_text_1Y(r_dir, stop_words)  # 形態素解析
+    # lda, lda_param = make_lda_bow(texts, 80, 0.7, 10) # BoW による lda
+    # # トピックの表示
     # for t in lda.show_topics(-1):
     #     print(t)
 
 
     ################  精度を上げる！！！！！！！！！！！！！！！！
-    #### 固有名詞ありよりも、一般名詞のみのほうが良いかも
     ## まずは　BoW
 
-    # 100-8-8 0.29-110, 90-8-12 0.29弱-120
-    
+    # 5年分の精度 100-4 で coherence 046, perplexity 114
