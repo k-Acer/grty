@@ -8,12 +8,13 @@ def get_filepaths(r_dir):
         r_dir (str): 読み込みディレクトリのパス
 
     Returns:
-        list: 各ファイルのパスをリストに格納して返す
+        filelist: 各ファイルのパスをリストに格納して返す
     """
     # テキストのファイル名を取得
     filelist = []
     for f in os.listdir(r_dir):
         if os.path.isfile(os.path.join(r_dir, f)):
-            filelist.append(r_dir + f)
+            filepath = os.path.join(r_dir, f)
+            filelist.append(filepath)
 
     return filelist
