@@ -1,4 +1,5 @@
 import os
+import re
 
 from bs4 import BeautifulSoup
 import chardet
@@ -17,13 +18,13 @@ def html2text(r_file):
         text (str): テキストデータ
     """
     # テキストをバイト列として読み込み
-    with open(r_file, 'rb') as f:
+    with open(r_file, 'r') as f:
         html = f.read()
     # 文字コードの判定とデコード
-    if chardet.detect(html)['encoding'] == 'utf-8':
-        html.decode('utf-8')
-    else:
-        html.decode('cp932')
+    # if chardet.detect(html)['encoding'] == 'utf-8':
+    #     html.decode('utf-8')
+    # else:
+    #     html.decode('cp932')
     # テキストの取得
     soup = BeautifulSoup(html, "html.parser")
     text = soup.get_text()
@@ -55,11 +56,12 @@ def html2text_year(base_dir, year):
         # 書き込みファイル名の作成
         basename = os.path.basename(filepath)  # 読み込みファイル名を取得
         name = os.path.splitext(basename)[0]  # 拡張子を削除
+        name_list = re.split('_', name)  # 株式コード
         w_dir = os.path.dirname(filepath).replace('yuho', 'text')  # 書き込みディレクトリ名を作成
         # 書き込みディレクトリが存在しない場合は作成する。
         if not os.path.isdir(w_dir): os.mkdir(w_dir)
-        w_file = os.path.join(w_dir, name + '.txt')  # 書き込みファイル名
-        # # テキストファイルに保存
+        w_file = os.path.join(w_dir, name_list[1] + '.txt')  # 書き込みファイル名
+        # テキストファイルに保存
         with open(w_file, mode='w', encoding='utf-8') as f:
             f.write(text)
 
@@ -73,6 +75,7 @@ def html2text_all(r_dir):
     Args:
         r_dir (str): 読み込みディレクトリのパス
     """
+    # yuhoディレクトリ
     yuho_dir = os.path.join(r_dir, 'yuho')
     # テキスト保存ディレクトリが存在しない場合は作成する。
     text_dir = os.path.join(r_dir, 'text') 
@@ -93,10 +96,11 @@ def html2text_all(r_dir):
         # 書き込みファイル名の作成
         basename = os.path.basename(f)  # 読み込みファイル名を取得
         name = os.path.splitext(basename)[0]  # 拡張子を削除
+        name_list = re.split('_', name)  # 株式コード
         w_dir = os.path.dirname(f).replace('yuho', 'text')  # 書き込みディレクトリ名を作成
         # 書き込みディレクトリが存在しない場合は作成する。
         if not os.path.isdir(w_dir): os.mkdir(w_dir)
-        w_file = os.path.join(w_dir, name + '.txt')  # 書き込みファイル名
+        w_file = os.path.join(w_dir, name_list[1] + '.txt')  # 書き込みファイル名
         # テキストファイルに保存
         with open(w_file, mode='w', encoding='utf-8') as f:
             f.write(text)
@@ -109,6 +113,10 @@ if __name__ == '__main__':
     # html2text_all(r_dir)
 
     # １年間
-    base_dir = './data'
-    year = '2020'
-    html2text_year(base_dir, year)
+    # base_dir = './data'
+    # year = '2020'
+    # html2text_year(base_dir, year)
+
+    ################ sample
+    # r_dir = './data/sample'
+    # html2text_all(r_dir)
