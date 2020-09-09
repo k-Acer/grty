@@ -81,32 +81,15 @@ def normalize_texts(word):
     word = re.sub('.*%', '', word)
     return word
 
-# def analyse_text_year(r_dir, stop_words):
-#     """
-#     analyse_text を繰り返し実行する(1年分)。
-
-#     Args:
-#         r_dir (str): 読み込みディレクトリのパス
-#         stop_words (list): ストップワードのリスト
-
-#     Returns:
-#         list: 形態素解析積みの各テキストをリストに格納して返す
-#     """
-#     # テキストのファイル名を取得
-#     filepaths = utils.get_filepaths(r_dir)
-#     # 各テキストに対して形態素解析
-#     print('Start Text Analysis')
-#     texts = [analyse_text(r_file, stop_words) for r_file in filepaths]
-#     print('Fin Text Analysis')
-#     return texts
-
-def analyse_text_all(r_dir, stop_words):
+def analyse_text_roop(r_dir, stop_words, start, end):
     """
-    analyse_text を繰り返し実行する(全期間)。
+    analyse_text を繰り返し実行する。
 
     Args:
         r_dir (str): 読み込みディレクトリのパス
         stop_words (list): ストップワードのリスト
+        start (int): この年から
+        end (int): この年まで
 
     Returns:
         list: 形態素解析積みの各テキストをリストに格納して返す
@@ -116,10 +99,11 @@ def analyse_text_all(r_dir, stop_words):
     # 全期間のファイルパスを取得
     filepaths = []
     for d in dirpaths:
-        year_path = os.path.join(r_dir, d)  # 年度パスの取得
-        f = utils.get_filepaths(year_path)
-        for filepath in f:
-            filepaths.append(filepath)
+        if (start <= int(d)) & (int(d) <= end):
+            year_path = os.path.join(r_dir, d)  # 年度パスの取得
+            f = utils.get_filepaths(year_path)
+            for filepath in f:
+                filepaths.append(filepath)
     # 全期間のファイルに対して形態素解析
     print('Start Text Analysis')
     texts = [analyse_text(r_file, stop_words) for r_file in filepaths]
@@ -151,17 +135,26 @@ if __name__ == '__main__':
 
     # ストップワードリストの作成
     stop_words = create_stopwords('./data/slothlib/slothlib.txt')
+    # r_dir = './data/text'
+    # texts = analyse_text_roop(r_dir, stop_words, 2006, 2010)
+    # w_file = './data/text_analysed/texts_2006-2010.pkl'
+    # save_texts(w_file, texts)
 
-    r_dir = './data/text'
-    texts = analyse_text_all(r_dir, stop_words)
-    w_file = './data/text_analysed/texts.pkl'
-    save_texts(w_file, texts)
+    ##### 特定期間の形態素解析
+    # year = [i for i in range(2011, 2021)]
+    # for j in year:
+    #     texts = analyse_text_roop(r_dir, stop_words, j, j)
+    #     w_file = './data/text_analysed/texts_{0}.pkl'.format(j)
+    #     save_texts(w_file, texts)
 
     ################ sample (全期間)
+    # stop_words = create_stopwords('./data/slothlib/slothlib.txt')
     # r_dir = './data/sample/text'
-    # texts = analyse_text_all(r_dir, stop_words)
-    # w_file = './data/sample/text_analysed/texts.pkl'
+    # texts = analyse_text_roop(r_dir, stop_words, 2020, 2020)
+    # w_file = './data/sample/text_analysed/texts_2020.pkl'
     # save_texts(w_file, texts)
+
+    ###### pckle 確認用
     # with open(w_file, "rb") as f:
     #     hoge = pickle.load(f)
-    # print(hoge)
+    # print(len(hoge))
