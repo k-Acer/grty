@@ -18,13 +18,13 @@ def html2text(r_file):
         text (str): テキストデータ
     """
     # テキストをバイト列として読み込み
-    with open(r_file, 'r') as f:
+    with open(r_file, 'rb') as f:
         html = f.read()
     # 文字コードの判定とデコード
-    # if chardet.detect(html)['encoding'] == 'utf-8':
-    #     html.decode('utf-8')
-    # else:
-    #     html.decode('cp932')
+    if chardet.detect(html)['encoding'] == 'utf-8':
+        html.decode('utf-8')
+    else:
+        html.decode('cp932')
     # テキストの取得
     soup = BeautifulSoup(html, "html.parser")
     text = soup.get_text()
@@ -109,7 +109,7 @@ def html2text_all(r_dir):
 
 if __name__ == '__main__':
     # 全期間
-    # r_dir = './data'
+    r_dir = './data'
     # html2text_all(r_dir)
 
     # １年間
