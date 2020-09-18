@@ -72,13 +72,13 @@ def analyse_text(r_file, stop_words):
     return word_list
 
 def normalize_texts(word):
-    word = re.sub('\d+年', '', word)
-    word = re.sub('\d+年度', '', word)
-    word = re.sub('\d+月', '', word)
-    word = re.sub('\d+日', '', word)
-    word = re.sub('\d+月\d+日', '', word)
-    word = re.sub('\d+億円?', '', word)
-    word = re.sub('.*%', '', word)
+    word = re.sub(r'\d+年', '', word)
+    word = re.sub(r'\d+年度', '', word)
+    word = re.sub(r'\d+月', '', word)
+    word = re.sub(r'\d+日', '', word)
+    word = re.sub(r'\d+月\d+日', '', word)
+    word = re.sub(r'\d+億円?', '', word)
+    word = re.sub(r'.*%', '', word)
     return word
 
 def analyse_text_roop(r_dir, stop_words, start, end):
