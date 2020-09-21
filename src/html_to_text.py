@@ -88,7 +88,7 @@ def roop_html2topics(read_dir='./data'):
     html2text をループする。
     topics と text を作成する。
     topics には企業の有報をトピックに分けて保存
-    texts にはトピックを結合したものを保存
+    texts にはトピックを結合したテキストを保存
 
     Args:
         read_dir (str): 読み込みディレクトリのパス
@@ -98,7 +98,7 @@ def roop_html2topics(read_dir='./data'):
     # トピック保存ディレクトリが存在しない場合は作成する。
     topics_dir = os.path.join(read_dir, 'topics') 
     if not os.path.isdir(topics_dir): os.mkdir(topics_dir)
-    # テキスト保存ディレクトリが存在しない場合は作成する。
+    # 企業テキスト保存ディレクトリが存在しない場合は作成する。
     texts_dir = os.path.join(read_dir, 'texts')
     if not os.path.isdir(texts_dir): os.mkdir(texts_dir)
     # yuhoディレクトリ下の各年度ディレクトリ名のリストを取得
@@ -126,7 +126,7 @@ def roop_html2topics(read_dir='./data'):
             # topics下の企業ディレクトリがなければ作成
             if not os.path.isdir(f_dir): os.mkdir(f_dir)
             # ファイルが存在しなければ書き込み
-            # for i, text in enumerate(topics):
+            for i, text in enumerate(topics):
                 w_topic_file = os.path.join(f_dir, str(i) + '.txt')  # 書き込みファイル名
                 try:
                     with open(w_topic_file, mode='x', encoding='utf-8') as f:
@@ -148,7 +148,7 @@ def roop_html2topics(read_dir='./data'):
 
 if __name__ == '__main__':
     
-    html2topic_all()
+    roop_html2topics()
 
     ################ test
     ###### html2topics
