@@ -8,7 +8,7 @@ import MeCab
 
 import utils
 
-def create_stopwords(path):
+def create_stopwords(path='./data/slothlib/slothlib.txt'):
     """
     ストップワードを作成する。
 
@@ -16,7 +16,7 @@ def create_stopwords(path):
         path (str): 読み込みファイル名
 
     Returns:
-        list: ストップワードをリスト型で返す
+        list: ストップワードのリスト
     """
     # パスが存在しない場合、slothlib をダウンロード
     if not os.path.exists(path):
@@ -33,19 +33,19 @@ def download_slothlib(path):
     url = 'http://svn.sourceforge.jp/svnroot/slothlib/CSharp/Version1/SlothLib/NLP/Filter/StopWord/word/Japanese.txt'
     urllib.request.urlretrieve(url, path)
 
-def analyse_text(r_file, stop_words):
+def analyse_text(read_file, stop_words):
     """
     形態素解析を行う。
 
     Args:
-        r_file (str): 読み込みファイルのパス
+        read_file (str): 読み込みファイルのパス
         stop_words (list): ストップワードのリスト
 
     Returns:
-        list: 形態素解析を行った単語をリスト型で返す
+        list: 形態素解析を行った文書のリスト
     """
     # テキストの読み込み
-    with open(r_file) as f:
+    with open(read_file) as f:
         text = f.read()
     # テキストの正規化
     text = neologdn.normalize(text)
@@ -81,53 +81,82 @@ def normalize_texts(word):
     word = re.sub(r'.*%', '', word)
     return word
 
-def analyse_text_roop(r_dir, stop_words, start, end):
+def analyse_topics(read_dir, stop_words, start, end):
     """
     analyse_text を繰り返し実行する。
 
     Args:
-        r_dir (str): 読み込みディレクトリのパス
+        read_dir (str): 読み込みディレクトリのパス
         stop_words (list): ストップワードのリスト
         start (int): この年から
         end (int): この年まで
 
     Returns:
-        list: 形態素解析積みの各テキストをリストに格納して返す
+        list: 形態素解析積みのテキストのリスト
     """
-    # テキストファイルが格納されている各年度のディレクトリ名のリストを取得
-    dirpaths = os.listdir(r_dir)
+    # 年度ディレクトリ名のリストを取得
+    dirpaths = os.listdir(read_dir)
+    # 全期間のファイルパスを取得
+    main_files = []
+    for d in dirpaths:  # 年度ごと
+        if (start <= int(d)) & (int(d) <= end):
+            year_path = os.path.join(read_dir, d)
+            # 企業ディレクトリ名のリストを取得
+            firm_codes = os.listdir(year_path)
+            for code in firm_codes:  # 企業ごと
+                firm_path = os.path.join(year_path, code)
+                file_paths = utils.get_filepaths(firm_path)
+                for f in file_paths:
+                    main_files.append(f)
+    # 全期間のファイルに対して形態素解析
+    print('Start Topics Analysis')
+    text_list = [analyse_text(r_file, stop_words) for r_file in main_files]
+    print('Fin Topics Analysis')
+    return text_list
+
+def analyse_texts(read_dir, stop_words, start, end):
+    """
+    analyse_text を繰り返し実行する。
+
+    Args:
+        read_dir (str): 読み込みディレクトリのパス
+        stop_words (list): ストップワードのリスト
+        start (int): この年から
+        end (int): この年まで
+
+    Returns:
+        list: 形態素解析積みのテキストのリスト
+    """
+    # 年度ディレクトリ名のリストを取得
+    dirpaths = os.listdir(read_dir)
     # 全期間のファイルパスを取得
     filepaths = []
     for d in dirpaths:
         if (start <= int(d)) & (int(d) <= end):
-            year_path = os.path.join(r_dir, d)  # 年度パスの取得
+            year_path = os.path.join(read_dir, d)  # 年度パスの取得
             f = utils.get_filepaths(year_path)
             for filepath in f:
                 filepaths.append(filepath)
     # 全期間のファイルに対して形態素解析
-    print('Start Text Analysis')
+    print('Start Texts Analysis')
     texts = [analyse_text(r_file, stop_words) for r_file in filepaths]
-    print('Fin Text Analysis')
+    print('Fin Texts Analysis')
     return texts
 
-def save_texts(w_file, texts):
+def save_texts(write_file, text_list):
     '''
     形態素解析したテキストを pickle 形式で保存
 
     Args:
-        r_dir (str): 読み込みディレクトリのパス
-        stop_words (list): ストップワードのリスト
-
-    Returns:
-        list: 形態素解析積みの各テキストをリストに格納して返す
+        write_file (str): 読み込みディレクトリのパス
+        text_list (list): ストップワードのリスト
     '''
     # 書き込みディレクトリが存在しない場合は作成
-    dirname = os.path.dirname(w_file)
+    dirname = os.path.dirname(write_file)
     if not os.path.isdir(dirname): os.mkdir(dirname)
     # pickle 形式で保存
-    with open(w_file, 'wb') as f:
-        pickle.dump(texts, f)
-    
+    with open(write_file, 'wb') as f:
+        pickle.dump(text_list, f)
 
 
 
@@ -135,26 +164,33 @@ if __name__ == '__main__':
 
     # ストップワードリストの作成
     stop_words = create_stopwords('./data/slothlib/slothlib.txt')
-    # r_dir = './data/text'
-    # texts = analyse_text_roop(r_dir, stop_words, 2006, 2010)
-    # w_file = './data/text_analysed/texts_2006-2010.pkl'
-    # save_texts(w_file, texts)
+    
+    ########## 全期間の形態素解析
+    ##### topics
+    # read_topics_dir = './data/topics'
+    # text_list = analyse_topics(read_topics_dir, stop_words, 2006, 2020)
+    # write_topics_file = './data/analised_topics/topics.pkl'
+    # save_texts(write_topics_file, text_list)
 
-    ##### 特定期間の形態素解析
+    ########## １年ごとの形態素解析
+    ##### topics
     # year = [i for i in range(2011, 2021)]
     # for j in year:
-    #     texts = analyse_text_roop(r_dir, stop_words, j, j)
-    #     w_file = './data/text_analysed/texts_{0}.pkl'.format(j)
-    #     save_texts(w_file, texts)
+    #     topics = analyse_topics(read_topics_dir, stop_words, j, j)
+    #     w_file = './data/analised_topics/topics_{0}.pkl'.format(j)
+    #     save_texts(w_file, topics)
 
-    ################ sample (全期間)
+
+    ################ sample
     # stop_words = create_stopwords('./data/slothlib/slothlib.txt')
-    # r_dir = './data/sample/text'
-    # texts = analyse_text_roop(r_dir, stop_words, 2020, 2020)
-    # w_file = './data/sample/text_analysed/texts_2020.pkl'
-    # save_texts(w_file, texts)
+    ##### topics
+    # read_topics_dir = './data/sample/topics'
+    # analised_topics = analyse_topics(read_topics_dir, stop_words, 2018, 2020)
+    # write_topics_file = './data/sample/analised_topics/topics_2018-2020.pkl'
+    # save_texts(write_topics_file, analised_topics)
 
     ###### pckle 確認用
-    # with open(w_file, "rb") as f:
+    # r_file = './data/sample/analised_topics/topics_2018-2020.pkl'
+    # with open(r_file, "rb") as f:
     #     hoge = pickle.load(f)
     # print(len(hoge))
