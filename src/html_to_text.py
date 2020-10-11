@@ -32,54 +32,99 @@ def html2topics(read_file):
             html = f.read()
     # htmlファイルからタグを取得
     soup = BeautifulSoup(html, "html.parser")
-    tag = soup.find_all(['h3', 'h4', 'p', 'div'])
+    tag = soup.find_all(['h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'span'])
     # タグからテキストを取得し、重複を削除する
     uniq_texts = []
     for t in tag:
-        if not t.text in uniq_texts:
-            text = neologdn.normalize(t.text).strip()  # テキストの正規化 (stripは前後の空白を削除している)
+        text = neologdn.normalize(t.text).strip()  # テキストの正規化 (stripは前後の空白を削除している)
+        if not text in uniq_texts:
             uniq_texts.append(text)
     # 取得したテキストをトピックに分割する
     topic_list = []
     topic = []
-    meet_symbol = False
-    symbol_is_paren = False
-    symbol_is_round = False
-    symbol_is_dot = False
+    symbol = None
+    symbol_list = []
+    header_num = 0
     for text in uniq_texts:
         # 最初に取得した記号を基準にテキストをトピックに分割する
-        if not meet_symbol:
-            if re.match(r'[①-⑳]', text):
-                symbol_is_round = True
-                meet_symbol = True
-            if re.match(r'\(\d+\)', text):
-                symbol_is_paren = True
-                meet_symbol = True
-            if re.match(r'(\d+)\.\D', text):
-                symbol_is_dot = True
-                meet_symbol = True
+        if not symbol and not re.search(r'事業等のリスク', text):
+            if re.match(r'①', text):  # 丸付き数字
+                symbol = r'[①-⑳]'
+            elif re.match(r'\(1\)', text):  # 括弧+数字
+                symbol = r'\(\d+\)'
+            elif re.match(r'\([aA]\)', text):  # 括弧+アルファベッ
+                symbol = r'\([a-zA-Z]\)'
+            elif re.match(r'\([ア-ン]\)', text):  # 括弧+カナ
+                symbol = r'\([ア-ン]\)'
+            elif re.match(r'1\.(\D)(\D)+', text):  # 数字.
+                symbol = r'(\d+)\.(\D)(\D)+'
+            elif re.match(r'[aA]\.(\D)(\D)+', text):  # アルファベット.
+                symbol = r'[a-zA-Z]\.(\D)(\D)+'
+            elif re.match(r'[ア-ン]\.(\D)(\D)+', text):  # カナ.
+                symbol = r'[ア-ン]\.(\D)(\D)+'
+            elif re.match(r'1\)', text):  # 半括弧+数字
+                symbol = r'\d+\)'
+            elif re.match(r'[aA]\)', text):  # 半括弧+アルファベッ
+                symbol = r'[a-zA-Z]\)'
+            elif re.match(r'[ア-ン]\)', text):  # 半括弧+カナ
+                symbol = r'[ア-ン]\)'
+            elif re.match(r'1(\D)(\D)+', text):  # 数字
+                symbol = r'(\d)(\D)(\D)+'
+            elif re.match(r'�@', text):  # 文字化け
+                symbol = r'�[A-Z@]'
+            else:
+                header_num+=1
+                if header_num > 20:
+                    print('Too many header')
+                    break
         # トピックを取得
-        if re.match(r'[①-⑳]', text) and symbol_is_round:
-            if len(topic) > 0:
+        if symbol and re.match(symbol, text):
+            this_symbol = re.match(symbol, text).group()
+            if (not this_symbol in symbol_list) and len(symbol_list) > 0:  # シンボルが同じでないならば
                 topic_list.append(''.join(topic))
                 topic.clear()
-            topic.append('{0}。'.format(text))
-        elif re.match(r'\(\d+\)', text) and symbol_is_paren:
-            # print('Match')
-            if len(topic) > 0:
-                topic_list.append(''.join(topic))
-                topic.clear()
-            topic.append('{0}。'.format(text))
-        elif re.match(r'(\d+)\.\D', text) and symbol_is_dot:
-            if len(topic) > 0:
-                topic_list.append(''.join(topic))
-                topic.clear()
-            topic.append('{0}。'.format(text))
+                topic.append('{0}。'.format(text))
+                symbol_list.append(this_symbol)
+            elif len(symbol_list) == 0:  # はじめにマッチしたときのみここを通る
+                topic.append('{0}。'.format(text))
+                symbol_list.append(this_symbol)
         else:
             if len(topic) > 0:
                 topic.append(text)
+    # topic_list が空の場合
+    if len(topic_list) == 0:
+        header_num = 0
+        for text in uniq_texts:
+            if not symbol and not re.search(r'事業等のリスク', text):
+                if re.match(r'\([ぁ-んァ-ン一-龥・]*\)', text):  # 括弧 + 文字
+                    print('MATCH')
+                    symbol = r'\([ぁ-んァ-ン一-龥・]*\)'
+                elif re.match(r'〔[ぁ-んァ-ン一-龥・]*〕', text):  # 鈎括弧 + 文字
+                    print('MATCH')
+                    symbol = r'〔[ぁ-んァ-ン一-龥・]*〕'
+                else:
+                    header_num+=1
+                    if header_num > 20:
+                        print('Also too many header')
+                        break
+            # トピックを取得
+            if symbol and re.match(symbol, text):
+                this_symbol = re.match(symbol, text).group()
+                if (not this_symbol in symbol_list) and len(symbol_list) > 0:  # シンボルが同じでないならば
+                    topic_list.append(''.join(topic))
+                    topic.clear()
+                    topic.append('{0}。'.format(text))
+                    symbol_list.append(this_symbol)
+                elif len(symbol_list) == 0:  # はじめにマッチしたときのみここを通る
+                    topic.append('{0}。'.format(text))
+                    symbol_list.append(this_symbol)
+            else:
+                if len(topic) > 0:
+                    topic.append(text)
+    # 最後のトピックを加える
     if len(topic) > 0:
         topic_list.append(''.join(topic))
+    # print('{0} has {1} header'.format(read_file, header_num))
     return topic_list
 
 
@@ -111,10 +156,11 @@ def roop_html2topics(read_dir='./data'):
         for filepath in f:
             filepaths.append(filepath)
     # htmlファイルをテキストに変換し保存
+    only_one_topic = 0
     for f in filepaths:
         # htmlファイルからトピックを取得
         topics = html2topics(f)
-        if len(topics) > 0:
+        if len(topics) > 1:  # トピックが１しかない場合、うまく抽出できていない可能性が高い
             # 企業ディレクトリを作成
             basename = os.path.basename(f)  # 読み込みファイル名を取得
             name = os.path.splitext(basename)[0]  # htm拡張子を削除
@@ -144,6 +190,10 @@ def roop_html2topics(read_dir='./data'):
                     f.write(firm_text)
             except FileExistsError:
                 pass
+        else:
+            print('{0} have less than one topic: {1}'.format(f, len(topics)))
+            only_one_topic+=1
+    print('There are {0} firms that have less than one topic'.format(only_one_topic))
                 
 
 if __name__ == '__main__':
@@ -152,11 +202,12 @@ if __name__ == '__main__':
 
     ################ test
     ###### html2topics
-    # read_file = './data/yuho/2006/10014_1377_yuho_101_20050531.htm'
+    # read_file = './data/yuho/2020/10014_8135_yuho_101_20200331.htm'
     # topic_list = html2topics(read_file)
+    # print('SHOW TOPICS')
     # for topic in topic_list:
     #     print('---------------------------------')
     #     print(topic)
+
     ###### roop_html2text
-    # read_dir = './data/sample'
-    # roop_html2topics(read_dir)
+    # roop_html2topics('./data/sample')
