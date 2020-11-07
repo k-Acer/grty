@@ -66,9 +66,11 @@ def analyse_text(read_file, stop_words):
         node = node.next
     # 辞書によるストップワードの除去
     word_list = [word for word in word_list if word not in stop_words]
+    symbol = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'A', 'B', 'C', 'D', 'イ', 'ロ', 'ハ', 'ニ']
+    word_list = [word for word in word_list if word not in symbol]
     # 正規表現によるストップワードの削除
     word_list = [normalize_texts(word) for word in word_list]
-    word_list = [word for word in word_list if word != '']
+    word_list = [word for word in word_list if word != '']  # 空文字列の削除
     return word_list
 
 def normalize_texts(word):
@@ -77,8 +79,8 @@ def normalize_texts(word):
     word = re.sub(r'\d+月', '', word)
     word = re.sub(r'\d+日', '', word)
     word = re.sub(r'\d+月\d+日', '', word)
-    word = re.sub(r'\d+億円?', '', word)
-    word = re.sub(r'.*%', '', word)
+    word = re.sub(r'平成.年', '', word)
+    word = re.sub(r'\d+.*', '', word)
     return word
 
 def analyse_topics(read_dir, stop_words, start, end):
@@ -161,32 +163,31 @@ def save_texts(write_file, text_list):
 
 
 if __name__ == '__main__':
-
     # ストップワードリストの作成
     stop_words = create_stopwords('./data/slothlib/slothlib.txt')
     
     ########## 全期間の形態素解析
     ##### topics
     # read_topics_dir = './data/topics'
-    # text_list = analyse_topics(read_topics_dir, stop_words, 2006, 2020)
-    # write_topics_file = './data/analised_topics/topics.pkl'
+    # text_list = analyse_topics(read_topics_dir, stop_words, 2006, 2010)
+    # write_topics_file = './data/analyzed_topics/topics_2006-2010.pkl'
     # save_texts(write_topics_file, text_list)
 
     ########## １年ごとの形態素解析
     ##### topics
+    # read_topics_dir = './data/topics'
     # year = [i for i in range(2011, 2021)]
     # for j in year:
     #     topics = analyse_topics(read_topics_dir, stop_words, j, j)
-    #     w_file = './data/analised_topics/topics_{0}.pkl'.format(j)
+    #     w_file = './data/analyzed_topics/topics_{0}.pkl'.format(j)
     #     save_texts(w_file, topics)
 
 
     ################ sample
-    # stop_words = create_stopwords('./data/slothlib/slothlib.txt')
     ##### topics
     # read_topics_dir = './data/sample/topics'
     # analised_topics = analyse_topics(read_topics_dir, stop_words, 2018, 2020)
-    # write_topics_file = './data/sample/analised_topics/topics_2018-2020.pkl'
+    # write_topics_file = './data/sample/analyzed_topics/topics_2018-2020.pkl'
     # save_texts(write_topics_file, analised_topics)
 
     ###### pckle 確認用
