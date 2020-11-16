@@ -168,14 +168,14 @@ if __name__ == '__main__':
     
     ########## 全期間の形態素解析
     ##### topics
-    # read_topics_dir = './data/topics'
-    # text_list = analyse_topics(read_topics_dir, stop_words, 2006, 2010)
-    # write_topics_file = './data/analyzed_topics/topics_2006-2010.pkl'
+    # read_topics_dir = './data/texts'
+    # text_list = analyse_topics(read_topics_dir, stop_words, 2006, 2020)
+    # write_topics_file = './data/analyzed_topics/topics.pkl'
     # save_texts(write_topics_file, text_list)
 
     ########## １年ごとの形態素解析
     ##### topics
-    # read_topics_dir = './data/topics'
+    # read_topics_dir = './data/texts'
     # year = [i for i in range(2011, 2021)]
     # for j in year:
     #     topics = analyse_topics(read_topics_dir, stop_words, j, j)
@@ -185,13 +185,13 @@ if __name__ == '__main__':
 
     ################ sample
     ##### topics
-    # read_topics_dir = './data/sample/topics'
+    # read_topics_dir = './data/sample/texts'
     # analised_topics = analyse_topics(read_topics_dir, stop_words, 2018, 2020)
     # write_topics_file = './data/sample/analyzed_topics/topics_2018-2020.pkl'
     # save_texts(write_topics_file, analised_topics)
 
     ###### pckle 確認用
-    # r_file = './data/sample/analised_topics/topics_2018-2020.pkl'
+    # r_file = './data/sample/analyzed_topics/topics_2018-2020.pkl'
     # with open(r_file, "rb") as f:
     #     hoge = pickle.load(f)
     # print(len(hoge))
